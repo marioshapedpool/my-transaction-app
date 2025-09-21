@@ -15,7 +15,7 @@ services:
       - db_data:/var/lib/postgresql/data # Persistencia de datos en un volumen Docker
 
   backend:
-    image: apexblade:my-go-backend:1.0 # Busca un Dockerfile en el directorio ./backend
+    image: apexblade:my-go-backend # Busca un Dockerfile en el directorio ./backend
     container_name: myapp-backend
     restart: always
     ports:
@@ -30,7 +30,7 @@ services:
       - db # Asegura que la DB se inicie antes que el backend
 
   frontend:
-    image: apexblade:my-react-frontend:1.0 # Busca un Dockerfile en el directorio ./frontend
+    image: apexblade:my-react-frontend # Busca un Dockerfile en el directorio ./frontend
     container_name: myapp-frontend
     restart: always
     ports:
