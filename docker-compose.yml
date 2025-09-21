@@ -6,7 +6,7 @@ services:
     container_name: myapp-postgres
     restart: always
     ports:
-      - '5432:5432'
+      - '5432:5432' # Puerto para acceder a la DB desde tu host local si lo necesitas (no para producción)
     environment:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
@@ -15,28 +15,45 @@ services:
       - db_data:/var/lib/postgresql/data # Persistencia de datos en un volumen Docker
 
   backend:
-    image: apexblade/my-go-backend:1.0 # Busca un Dockerfile en el directorio ./backend
+    image: apexblade/my-go-backend:1.0 # Asegúrate de que esta imagen exista en Docker Hub
     container_name: myapp-backend
     restart: always
+    # Puerto 3000 del backend:
+    # Si quieres poder acceder a tu API directamente desde http://165.22.139.71:3000 (para pruebas), déjalo.
+    # Si SOLO quieres que el frontend se comunique con el backend a través del proxy de Nginx,
+    # puedes eliminar esta línea 'ports'. La comunicación interna entre frontend y backend funcionará igual.
     ports:
-      - '3000:3000' # Puerto para acceder a tu API Go desde el host
+      - '3000:3000'
     environment:
       DB_HOST: db # El nombre del servicio 'db' es resoluble dentro de la red de Docker Compose
       DB_PORT: 5432
       DB_USER: myuser
       DB_PASSWORD: mysecretpassword
       DB_NAME: mydatabase
+      API_PORT: 3000 # Puerto en el que tu app Go escucha DENTRO del contenedor
+      # ¡IMPORTANTE para CORS! Este es el ORIGEN público de tu frontend.
+      # Tu backend solo permitirá peticiones del dominio/IP de tu frontend.
+      FRONTEND_ORIGIN: http://165.22.139.71:8080 # La IP y puerto donde tu frontend es accesible
     depends_on:
       - db # Asegura que la DB se inicie antes que el backend
 
   frontend:
-    image: apexblade/my-react-frontend:1.0 # Busca un Dockerfile en el directorio ./frontend
+    # Aquí usarás la imagen que construiste localmente y subiste a Docker Hub
+    image: apexblade/my-react-frontend:1.0 # Asegúrate de que esta imagen exista en Docker Hub
     container_name: myapp-frontend
     restart: always
+    # Mapeo de puertos para el frontend:
+    # '8080:80' significa: el tráfico que llega al puerto 8080 de tu Droplet
+    # será reenviado al puerto 80 del contenedor 'frontend' (donde Nginx escucha).
     ports:
-      - '8080:80' # Si tu frontend se sirve en el puerto 80 del contenedor (ej. con Nginx)
+      - '8080:80'
     depends_on:
-      - backend # Asegura que el backend se inicie antes que el frontend (opcional, dependiendo de la interacción)
+      - backend # Asegura que el backend se inicie antes que el frontend
+    # Ya NO necesitas VITE_API_URL aquí.
+    # Explicación: Tu Nginx en el frontend hará el trabajo de proxy,
+    # así que el frontend solo necesita saber que la API está en '/api'.
+    # No necesita saber la IP pública del backend, porque Nginx está en el mismo contenedor
+    # y puede comunicarse directamente con el servicio 'backend' de Docker Compose.
 
 volumes:
-  db_data: # Define el volumen para PostgreSQL
+  db_data:

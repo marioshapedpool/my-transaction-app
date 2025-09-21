@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import './App.css'; // Asegúrate de tener este CSS o adapta el tuyo
+import './App.css';
 
-// Configura la URL base de tu API Go
-// Cuando esté en Docker Compose, 'backend' es el nombre del servicio Go.
-// Para acceder desde el navegador local, usaremos localhost:3000 (el puerto mapeado del backend).
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Configura la URL base de tu API Go.
+// Con la configuración de Nginx proxy, las llamadas van a /api directamente desde el navegador,
+// y Nginx las reenvía al backend.
+// Por lo tanto, no necesitamos la IP pública aquí.
+const API_BASE_URL = '/api'; // Las llamadas irán a '/api/transactions', por ejemplo.
 
 function App() {
   const [transactions, setTransactions] = useState([]);
@@ -19,7 +20,7 @@ function App() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions`);
+      const response = await fetch(`${API_BASE_URL}/transactions`); // Aquí usa /api/transactions
       if (!response.ok) {
         throw new Error('No se pudieron obtener las transacciones');
       }
@@ -48,6 +49,7 @@ function App() {
       if (editId) {
         // Actualizar transacción existente
         response = await fetch(`${API_BASE_URL}/transaction/${editId}`, {
+          // Aquí usa /api/transaction/{id}
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(transaction),
@@ -56,6 +58,7 @@ function App() {
       } else {
         // Crear nueva transacción
         response = await fetch(`${API_BASE_URL}/transaction`, {
+          // Aquí usa /api/transaction
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(transaction),
@@ -91,6 +94,7 @@ function App() {
     }
     try {
       const response = await fetch(`${API_BASE_URL}/transaction/${id}`, {
+        // Aquí usa /api/transaction/{id}
         method: 'DELETE',
       });
       if (!response.ok) {
