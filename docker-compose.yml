@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: myapp-postgres
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+      - db_data:/var/lib/postgresql/data # Persistencia de datos en un volumen Docker
+
+  backend:
+    image: apexblade:my-go-backend:1.0 # Busca un Dockerfile en el directorio ./backend
+    container_name: myapp-backend
+    restart: always
+    ports:
+      - '3000:3000' # Puerto para acceder a tu API Go desde el host
+    environment:
+      DB_HOST: db # El nombre del servicio 'db' es resoluble dentro de la red de Docker Compose
+      DB_PORT: 5432
+      DB_USER: myuser
+      DB_PASSWORD: mysecretpassword
+      DB_NAME: mydatabase
+    depends_on:
+      - db # Asegura que la DB se inicie antes que el backend
+
+  frontend:
+    image: apexblade:my-react-frontend:1.0 # Busca un Dockerfile en el directorio ./frontend
+    container_name: myapp-frontend
+    restart: always
+    ports:
+      - '8080:80' # Si tu frontend se sirve en el puerto 80 del contenedor (ej. con Nginx)
+    depends_on:
+      - backend # Asegura que el backend se inicie antes que el frontend (opcional, dependiendo de la interacción)
+
+volumes:
+  db_data: # Define el volumen para PostgreSQL
